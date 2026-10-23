@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!-- 开发入口：npm run dev；构建后的单文件在 dist/index.html -->
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>SRT / LRC → Alight Motion XML</title>
+</head>
+<body>
+  <m3e-theme color="#0000FF" scheme="dark" variant="fidelity" motion="expressive" strong-focus>
+    <div id="themeScope" class="dark">
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <m3e-heading variant="headline" size="medium">SRT / LRC → Alight Motion XML</m3e-heading>
+        </div>
+        <div class="header-actions">
+          <m3e-icon-button id="schemeToggle" toggle aria-label="切换到浅色">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" fill="currentColor" />
+              <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" />
+              </g>
+            </svg>
+            <svg slot="selected" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor" />
+            </svg>
+          </m3e-icon-button>
+          <m3e-button id="helpBtn" variant="text">导入</m3e-button>
+        </div>
+      </header>
+
+      <main class="app-layout">
+        <div class="left-column">
+          <m3e-card variant="filled">
+            <div slot="header" class="card-header"><span>1. 字幕</span></div>
+            <div slot="content" class="card-content">
+              <div id="dropzone" class="dropzone" role="button" tabindex="0">
+                <p class="drop-title">拖入 .srt / .lrc</p>
+                <p class="drop-hint">或点击选择</p>
+              </div>
+              <input id="fileInput" type="file" accept=".srt,.lrc,.txt,text/plain" hidden>
+              <div class="sample-row">
+                <m3e-button id="loadSampleSrt" variant="tonal" size="small">SRT 示例</m3e-button>
+                <m3e-button id="loadSampleLrc" variant="tonal" size="small">LRC 示例</m3e-button>
+              </div>
+              <div id="sourceInfo" class="source-info">未选择文件</div>
+              <div class="form-grid">
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="encodingSelect">编码</label>
+                  <m3e-select id="encodingSelect" value="auto">
+                    <m3e-option value="auto">自动检测</m3e-option>
+                    <m3e-option value="utf-8">UTF-8</m3e-option>
+                    <m3e-option value="gb18030">GBK / GB18030</m3e-option>
+                    <m3e-option value="big5">Big5（繁体中文）</m3e-option>
+                    <m3e-option value="shift_jis">Shift_JIS（日文）</m3e-option>
+                    <m3e-option value="windows-1252">Windows-1252（西欧）</m3e-option>
+                  </m3e-select>
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="formatSelect">格式</label>
+                  <m3e-select id="formatSelect" value="auto">
+                    <m3e-option value="auto">自动识别</m3e-option>
+                    <m3e-option value="srt">SRT</m3e-option>
+                    <m3e-option value="lrc">LRC</m3e-option>
+                  </m3e-select>
+                </m3e-form-field>
+                <div id="lrcModeRow" class="span2" style="display:none">
+                  <m3e-form-field variant="outlined">
+                    <label slot="label" for="lrcModeSelect">LRC 逐字</label>
+                    <m3e-select id="lrcModeSelect" value="chars">
+                      <m3e-option value="chars">单字</m3e-option>
+                      <m3e-option value="karaoke">累积</m3e-option>
+                      <m3e-option value="line">整行</m3e-option>
+                    </m3e-select>
+                  </m3e-form-field>
+                </div>
+                <div id="advanceRow" class="span2" style="display:none">
+                  <m3e-form-field variant="outlined">
+                    <label slot="label" for="advanceInput">字距 %</label>
+                    <input id="advanceInput" type="number" min="20" max="300" step="1" value="100">
+                  </m3e-form-field>
+                </div>
+              </div>
+            </div>
+          </m3e-card>
+
+          <m3e-card variant="filled">
+            <div slot="header" class="card-header"><span>2. 画面</span></div>
+            <div slot="content" class="card-content">
+              <m3e-segmented-button id="orientationBtns" class="orientation">
+                <m3e-button-segment value="landscape" checked>横屏</m3e-button-segment>
+                <m3e-button-segment value="portrait">竖屏</m3e-button-segment>
+                <m3e-button-segment value="custom">自定义</m3e-button-segment>
+              </m3e-segmented-button>
+              <div class="form-grid">
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="widthInput">宽（px）</label>
+                  <input id="widthInput" type="number" min="16" max="8192" step="1" value="1920">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="heightInput">高（px）</label>
+                  <input id="heightInput" type="number" min="16" max="8192" step="1" value="1080">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="fpsSelect">FPS</label>
+                  <m3e-select id="fpsSelect" value="60">
+                    <m3e-option value="60">60</m3e-option>
+                    <m3e-option value="30">30</m3e-option>
+                  </m3e-select>
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="bgColorInput">背景颜色</label>
+                  <input id="bgColorInput" type="color" value="#000000">
+                </m3e-form-field>
+              </div>
+              <label class="switch-row">
+                <span>透明背景</span>
+                <m3e-switch id="bgTransparentInput"></m3e-switch>
+              </label>
+            </div>
+          </m3e-card>
+
+          <m3e-card variant="filled">
+            <div slot="header" class="card-header"><span>3. 样式</span></div>
+            <div slot="content" class="card-content">
+              <div class="form-grid">
+                <m3e-form-field class="span2" variant="outlined">
+                  <label slot="label" for="fontInput">字体</label>
+                  <input id="fontInput" type="text" value="googlefonts?name=Roboto&amp;weight=900" spellcheck="false">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="sizeInput">字号</label>
+                  <input id="sizeInput" type="number" min="1" max="1000" step="1" value="28">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="scaleInput">缩放</label>
+                  <input id="scaleInput" type="number" min="0.01" max="100" step="0.01" value="1">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="colorInput">文字颜色</label>
+                  <input id="colorInput" type="color" value="#ffffff">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="opacityInput">不透明度 %</label>
+                  <input id="opacityInput" type="number" min="0" max="100" step="1" value="100">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="alignSelect">对齐</label>
+                  <m3e-select id="alignSelect" value="center">
+                    <m3e-option value="center">居中</m3e-option>
+                    <m3e-option value="left">左对齐</m3e-option>
+                    <m3e-option value="right">右对齐</m3e-option>
+                  </m3e-select>
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="wrapInput">换行宽度 %</label>
+                  <input id="wrapInput" type="number" min="1" max="100" step="1" value="90">
+                </m3e-form-field>
+              </div>
+              <label class="switch-row">
+                <span>阴影</span>
+                <m3e-switch id="shadowInput"></m3e-switch>
+              </label>
+            </div>
+          </m3e-card>
+
+          <m3e-card variant="filled">
+            <div slot="header" class="card-header"><span>4. 位置</span></div>
+            <div slot="content" class="card-content">
+              <div class="form-grid">
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="positionSelect">位置</label>
+                  <m3e-select id="positionSelect" value="bottom">
+                    <m3e-option value="bottom">底部</m3e-option>
+                    <m3e-option value="middle">居中</m3e-option>
+                    <m3e-option value="top">顶部</m3e-option>
+                  </m3e-select>
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="marginInput">边距 %</label>
+                  <input id="marginInput" type="number" min="0" max="50" step="1" value="15">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="tailInput">尾部留白（ms）</label>
+                  <input id="tailInput" type="number" min="0" max="600000" step="100" value="1000">
+                </m3e-form-field>
+                <m3e-form-field variant="outlined">
+                  <label slot="label" for="fixedDurationInput">固定时长（秒）</label>
+                  <input id="fixedDurationInput" type="number" min="0.001" step="0.1" placeholder="自动">
+                </m3e-form-field>
+                <div id="lastCueRow" class="span2" style="display:none">
+                  <m3e-form-field variant="outlined">
+                    <label slot="label" for="lastCueInput">末句时长（秒）</label>
+                    <input id="lastCueInput" type="number" min="0.1" max="600" step="0.1" value="3">
+                  </m3e-form-field>
+                </div>
+                <m3e-form-field class="span2" variant="outlined">
+                  <label slot="label" for="titleInput">标题</label>
+                  <input id="titleInput" type="text" value="示例字幕">
+                </m3e-form-field>
+              </div>
+            </div>
+          </m3e-card>
+        </div>
+
+        <div class="right-column">
+          <m3e-card variant="filled">
+            <div slot="header" class="card-header">
+              <span>预览</span>
+            </div>
+            <div slot="content" class="card-content preview-content">
+              <div id="stageWrap">
+                <div id="stage">
+                  <div id="stageText"></div>
+                  <div id="stageChars"></div>
+                  <div id="stageBadge" class="stage-badge">1920 × 1080</div>
+                </div>
+              </div>
+              <div class="nav-row">
+                <m3e-button id="prevBtn" variant="outlined" size="small">上一句</m3e-button>
+                <m3e-slider id="cueSlider" min="0" max="0" step="1">
+                  <m3e-slider-thumb id="cueSliderThumb" value="0"></m3e-slider-thumb>
+                </m3e-slider>
+                <m3e-button id="nextBtn" variant="outlined" size="small">下一句</m3e-button>
+              </div>
+              <div id="cuePosition" class="hint">—</div>
+              <div id="stats" class="stats">—</div>
+              <div id="warnings" class="warnings" hidden></div>
+              <div class="export-row">
+                <m3e-button id="generateBtn" variant="filled" disabled>生成 XML</m3e-button>
+                <span id="status" class="status"></span>
+              </div>
+              <div class="list-header">
+                <span>字幕</span>
+                <span id="cueListHint" class="hint"></span>
+              </div>
+              <div id="cueList" class="cue-list"></div>
+            </div>
+          </m3e-card>
+        </div>
+      </main>
+
+    </div>
+
+    <m3e-snackbar id="snackbar" dismissible duration="4200"></m3e-snackbar>
+    <m3e-dialog id="helpDialog" dismissible>
+      <span slot="header">导入</span>
+      <ol class="dialog-list">
+        <li><code>.xml</code> 传到手机</li>
+        <li>文件管理器打开，选 Alight Motion；或 AM → Import Project</li>
+        <li>音乐、视频在 AM 里加</li>
+      </ol>
+      <div slot="actions" end>
+        <m3e-button><m3e-dialog-action return-value="ok">关闭</m3e-dialog-action></m3e-button>
+      </div>
+    </m3e-dialog>
+    </div>
+  </m3e-theme>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
