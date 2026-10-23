@@ -22,6 +22,14 @@ npm run dev
 npm run preview
 ```
 
+## GitHub Pages
+
+推到 `main` 后会自动构建并部署 `dist/`：
+
+https://yar1991-translation.github.io/sub2am/
+
+首次需要在 Settings → Pages → Source 选 GitHub Actions（工作流会尝试自动开启）。
+
 ## 功能
 
 - 拖入或选择 `.srt` / `.lrc`，内置示例
